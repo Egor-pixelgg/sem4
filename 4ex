@@ -1,0 +1,94 @@
+Logger.cpp
+
+#include <iostream>
+#include <fstream>
+#include <mutex>
+#include <thread>
+#include <sstream>
+
+template<typename T>
+class Logger {
+
+private:
+    std::ofstream log_file;
+    std::mutex mtx;
+
+    inline std::string to_string_any(const T& value) {
+        std::stringstream ss;
+        ss << value;
+        return ss.str();
+    }
+
+public:
+
+    Logger(const std::string& filename) {
+        log_file.open(filename);
+    }
+
+    ~Logger() {
+        if (log_file.is_open())
+            log_file.close();
+    }
+
+    void log(const T& message) {
+
+        std::lock_guard<std::mutex> lock(mtx);
+
+        std::string msg = to_string_any(message);
+
+        std::cout
+            << "Поток "
+            << std::this_thread::get_id()
+            << ": "
+            << msg
+            << std::endl;
+
+        log_file
+            << "Поток "
+            << std::this_thread::get_id()
+            << ": "
+            << msg
+            << std::endl;
+    }
+};
+
+
+
+main.cpp
+
+#include <iostream>
+#include <thread>
+#include <chrono>
+
+#include "Logger.cpp"
+
+int main() {
+
+    Logger<std::string> logger("log.txt");
+
+    int threads = 5;
+    int messages_per_thread = 10;
+
+    for (int i = 0; i < threads; i++) {
+
+        std::thread([i, &logger, messages_per_thread]() {
+
+            for (int j = 0; j < messages_per_thread; j++) {
+
+                logger.log(
+                    "Сообщение " + std::to_string(j) +
+                    " от работника " + std::to_string(i)
+                );
+
+                std::this_thread::sleep_for(
+                    std::chrono::milliseconds(100)
+                );
+            }
+
+        }).detach();
+    }
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+
+    return 0;
+}
