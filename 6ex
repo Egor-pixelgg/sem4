@@ -103,13 +103,11 @@ void n6() {
 
     mp.print_matrix("Original matrix");
 
-    // возведение в квадрат
     std::cout << "\nSquare function";
     mp.apply([](int x) { return x * x; });
 
     mp.print_matrix("Matrix after square");
 
-    // увеличение на 1
     std::cout << "\nIncrement function";
     mp.apply([](int x) { return x + 1; });
 
